@@ -25,5 +25,8 @@ if str(ROOT) not in sys.path:
 import uvicorn
 
 if __name__ == "__main__":
-    uvicorn.run("backend.main:app", host=os.getenv("HOST", "127.0.0.1"), port=int(os.getenv("PORT", "8000")), reload=True)
+    is_dev = os.getenv("ENV", "development").lower() == "development" and os.getenv("RENDER") is None
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run("backend.main:app", host=host, port=port, reload=is_dev)
 

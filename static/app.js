@@ -1271,6 +1271,10 @@ function captureSnapshot() {
     if (!blob) return;
     const file = new File([blob], `live_capture_${Date.now()}.jpg`, { type: "image/jpeg" });
     state.selectedReportFile = file;
+    state.userSelectedCategory = false;
+    if (qs("#reportCategory")) qs("#reportCategory").value = "";
+    if (qs("#reportTitle")) qs("#reportTitle").value = "";
+    if (qs("#reportDescription")) qs("#reportDescription").value = "";
 
     const dataUrl = canvas.toDataURL("image/jpeg");
     qs("#reportPreviewImg").src = dataUrl;
@@ -1301,6 +1305,7 @@ function setupSamplePickers() {
       const targetCat = sampleCategoryMap[sampleKey];
       if (targetCat && qs("#reportCategory")) {
         qs("#reportCategory").value = targetCat;
+        state.userSelectedCategory = true;
       }
 
       const url = `/static/sample_images/${sampleKey}_sample.jpg`;
@@ -1349,8 +1354,11 @@ async function triggerAiAutoExtract() {
     const form = new FormData();
     form.append("file", file);
     form.append("location_hint", qs("#reportLocation")?.value || "");
-    form.append("category_hint", qs("#reportCategory")?.value || "");
-    form.append("title_hint", qs("#reportTitle")?.value || "");
+    const categorySelect = qs("#reportCategory");
+    const categoryHint = (state.userSelectedCategory && categorySelect?.value) ? categorySelect.value : "";
+    if (categoryHint) {
+      form.append("category_hint", categoryHint);
+    }
 
     const res = await fetch(`${API_ROOT}/ai-extract-report`, {
       method: "POST",
@@ -1359,6 +1367,14 @@ async function triggerAiAutoExtract() {
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
+
+    if (!data.detected) {
+      if (qs("#previewResolutionText")) {
+        qs("#previewResolutionText").textContent = "No automated defect detected • Select category manually";
+      }
+      toast(data.message || "No obvious infrastructure defect detected. Please capture closer imagery or choose defect category manually.", "info");
+      return;
+    }
 
     // Autofill form
     if (qs("#reportTitle")) qs("#reportTitle").value = data.title;
@@ -1409,6 +1425,10 @@ function setupReportForm() {
     const file = e.target.files?.[0];
     if (file) {
       state.selectedReportFile = file;
+      state.userSelectedCategory = false;
+      if (qs("#reportCategory")) qs("#reportCategory").value = "";
+      if (qs("#reportTitle")) qs("#reportTitle").value = "";
+      if (qs("#reportDescription")) qs("#reportDescription").value = "";
       qs("#reportFileName").textContent = file.name;
       const reader = new FileReader();
       reader.onload = (ev) => {
@@ -1432,10 +1452,16 @@ function setupReportForm() {
 
   qs("#clearEvidenceBtn")?.addEventListener("click", () => {
     state.selectedReportFile = null;
+    state.userSelectedCategory = false;
+    if (qs("#reportCategory")) qs("#reportCategory").value = "";
     qs("#reportFileInput").value = "";
     qs("#reportFileName").textContent = "JPG, PNG, MP4 supported up to 50MB";
     qs("#reportEvidencePreview").style.display = "none";
     stopCamera();
+  });
+
+  qs("#reportCategory")?.addEventListener("change", (e) => {
+    state.userSelectedCategory = !!e.target.value;
   });
 
   // Submit report

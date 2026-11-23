@@ -548,6 +548,7 @@ body.dark-mode footer.footer { border-top-color: var(--line) !important; color: 
             <div>
               <label>Defect Category</label>
               <select id="reportCategory" required>
+                <option value="" selected>-- Auto-Detect Category via AI --</option>
                 <option value="Pothole">Pothole (D40)</option>
                 <option value="Road crack">Road crack (D00/D10/D20)</option>
                 <option value="Streetlight">Streetlight / Damaged Pole</option>
@@ -1107,6 +1108,6 @@ body.dark-mode footer.footer { border-top-color: var(--line) !important; color: 
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/static/app.js?v=2.3.4"></script>
+<script src="/static/app.js?v=2.3.6"></script>
 </body>
 </html>

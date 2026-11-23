@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: urban-eyes
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements-ai.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: YOLO_CONFIG_DIR
+        value: /tmp/ultralytics
+      - key: MAX_UPLOAD_MB
+        value: 50

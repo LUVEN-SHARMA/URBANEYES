@@ -153,6 +153,38 @@ class UrbanEyesApiTests(unittest.TestCase):
         self.assertTrue(data_hint["ok"])
         self.assertEqual(data_hint["category"], "Garbage")
 
+    def test_footpath_detection_without_hint(self):
+        # Verify footpath damage photo with raw camera filename is NOT misclassified as Pothole
+        with open("static/sample_images/footpath_sample.jpg", "rb") as f:
+            content = f.read()
+        res = self.client.post(
+            "/api/ai-extract-report",
+            files={"file": ("IMG_20261024_153022.jpg", content, "image/jpeg")}
+        )
+        self.assertEqual(res.status_code, 200, res.text)
+        data = res.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["category"], "Footpath")
+
+    def test_user_uploaded_garbage_and_footpath_images(self):
+        user_garbage = Path("/Users/luvensharma/.gemini/antigravity/brain/72878ac6-4564-4122-ba95-c38c37b8f97d/.user_uploaded/media_1795429181401_982b4a41.jpg")
+        if user_garbage.exists():
+            with open(user_garbage, "rb") as f:
+                res = self.client.post("/api/ai-extract-report", files={"file": ("camera_photo_1.jpg", f.read(), "image/jpeg")})
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data["category"], "Garbage")
+            self.assertEqual(data["suggestedDepartment"], "Solid Waste Management / Sanitation")
+
+        user_footpath = Path("/Users/luvensharma/.gemini/antigravity/brain/72878ac6-4564-4122-ba95-c38c37b8f97d/.user_uploaded/media_1795429198227_0b6c800e.jpg")
+        if user_footpath.exists():
+            with open(user_footpath, "rb") as f:
+                res = self.client.post("/api/ai-extract-report", files={"file": ("camera_photo_2.jpg", f.read(), "image/jpeg")})
+            self.assertEqual(res.status_code, 200)
+            data = res.json()
+            self.assertEqual(data["category"], "Footpath")
+            self.assertEqual(data["suggestedDepartment"], "Urban Public Works / Sidewalks")
+
     def test_dashcam_inspection(self):
         res = self.client.post("/api/dashcam-inspect", data={"route_id": "route-delhi-ring"})
         self.assertEqual(res.status_code, 200, res.text)

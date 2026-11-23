@@ -10,3 +10,4 @@ datasets/rdd2022_yolo/images/
 datasets/rdd2022_yolo/labels/
 data/*.db-shm
 data/*.db-wal
+.env

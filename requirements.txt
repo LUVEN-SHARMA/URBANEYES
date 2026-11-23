@@ -4,3 +4,4 @@ python-multipart>=0.0.9
 Pillow>=10.0
 opencv-python-headless>=4.9
 python-dotenv>=1.0
+ultralytics>=8.2,<9.0
