@@ -166,6 +166,21 @@ class UrbanEyesApiTests(unittest.TestCase):
         self.assertTrue(data["ok"])
         self.assertEqual(data["category"], "Footpath")
 
+    def test_pothole_priority_over_cracks(self):
+        # Road containing a collapsed pothole crater surrounded by cracks must be classified as Pothole (Critical)
+        with open("static/sample_images/real_rdd_crack_sample.jpg", "rb") as f:
+            content = f.read()
+        res = self.client.post(
+            "/api/ai-extract-report",
+            files={"file": ("IMG_CRACK_POTHOLE.jpg", content, "image/jpeg")}
+        )
+        self.assertEqual(res.status_code, 200, res.text)
+        data = res.json()
+        self.assertTrue(data["ok"])
+        self.assertEqual(data["category"], "Pothole")
+        self.assertEqual(data["severity"], "Critical")
+        self.assertIn("pothole", data["title"].lower())
+
     def test_user_uploaded_garbage_and_footpath_images(self):
         user_garbage = Path("/Users/luvensharma/.gemini/antigravity/brain/72878ac6-4564-4122-ba95-c38c37b8f97d/.user_uploaded/media_1795429181401_982b4a41.jpg")
         if user_garbage.exists():
