@@ -6,25 +6,55 @@
   <meta name="theme-color" content="#0b1220" />
   <title>URBAN-EYES — AI Urban Infrastructure Accountability & Civic Platform</title>
   <meta name="description" content="Pan-India AI-Powered Multi-Infrastructure Defect Detection, Live GIS Geotagging & Civic Accountability System." />
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32x32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/static/favicon-16x16.png" />
+  <link rel="shortcut icon" href="/static/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem("urban_eyes_theme");
+        var d = t === "dark" || (!t && window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches);
+        if (d) { document.documentElement.classList.add("dark-mode"); }
+      } catch (e) {}
+    })();
+  </script>
   <style>
 :root{
-  --bg:#f4f7fa;--panel:#ffffff;--ink:#0b1324;--muted:#5f6c82;--line:#e2e7ef;
+  --bg:#f4f7fa;--panel:#ffffff;--panel-card:#f8fafc;--ink:#0b1324;--muted:#5f6c82;--line:#e2e7ef;--line-light:#edf2f7;
   --blue:#2b54e8;--blue-light:#eef3ff;--teal:#0ea58a;--green:#15803d;--amber:#b45309;
   --red:#dc2626;--purple:#7c3aed;--shadow:0 10px 30px rgba(15,26,48,.05);--radius:16px;
+  --topbar-bg:#ffffff;--input-bg:#f8fafc;--input-focus-bg:#ffffff;--modal-bg:#ffffff;
+  --th-bg:#f8fafc;--tr-hover:#f8fafc;--pill-bg:#ffffff;--pill-color:#334155;--pill-border:#cbd5e1;
+  --badge-bg:#f1f5f9;--card-hover:#f1f5f9;
 }
+
+body.dark-mode, html.dark-mode{
+  --bg:#090e17;--panel:#111a2b;--panel-card:#162238;--ink:#e2e8f0;--muted:#94a3b8;--line:#1e2d46;--line-light:#18253b;
+  --blue:#3b82f6;--blue-light:#1e293b;--teal:#14b8a6;--green:#22c55e;--amber:#f59e0b;
+  --red:#ef4444;--purple:#a855f7;--shadow:0 10px 30px rgba(0,0,0,.45);
+  --topbar-bg:#0d1524;--input-bg:#0c1422;--input-focus-bg:#141f32;--modal-bg:#111a2b;
+  --th-bg:#142034;--tr-hover:#16243b;--pill-bg:#162238;--pill-color:#cbd5e1;--pill-border:#294065;
+  --badge-bg:#1b283f;--card-hover:#19273f;
+}
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"DM Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .2s ease,color .2s ease}
 button,input,select,textarea{font:inherit}
 button{cursor:pointer}
+select{font:inherit;background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;outline:none;transition:border-color .15s ease,background .15s ease,color .15s ease}
+select:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15)}
+select option{background:var(--panel);color:var(--ink)}
 
 /* App Shell Layout */
 .app-shell{display:flex;min-height:100vh;width:100%}
-.sidebar{width:260px;flex:0 0 260px;background:#09101d;color:#e8edf5;padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:40}
+.sidebar{width:260px;flex:0 0 260px;background:#09101d;color:#e8edf5;padding:20px 14px;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;z-index:1100}
 .brand{display:flex;gap:12px;align-items:center;padding:4px 6px 18px;border-bottom:1px solid #192539}
 .brand-mark{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:grid;place-items:center;font-family:"Space Grotesk";font-weight:700;font-size:19px;color:#fff;box-shadow:0 6px 18px rgba(59,130,246,.3)}
 .brand-name{font-family:"Space Grotesk";letter-spacing:.03em;font-weight:700;font-size:16px;color:#fff}
@@ -45,30 +75,39 @@ button{cursor:pointer}
 .nav-icon{font-size:14px;width:18px;text-align:center;opacity:.9}
 
 .sidebar-footer{margin-top:auto;padding-top:12px;border-top:1px solid #172438;display:grid;gap:6px}
-.status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:700;background:#fff;width:max-content}
+.status-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid var(--line);border-radius:999px;font-size:10px;font-weight:700;background:var(--panel);color:var(--ink);width:max-content}
 .status-pill.live{background:#132238;color:#a5f3fc;border-color:#1e3a5f}
 .status-pill.live span{width:6px;height:6px;border-radius:50%;background:#06b6d4}
 
 .main{flex:1 1 auto;min-width:0;width:calc(100% - 260px)}
 
-/* Solid White Topbar to prevent background bleed-through */
-.topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 28px;background:#ffffff;border-bottom:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.03)}
-.eyebrow{font-size:9px;letter-spacing:.15em;font-weight:800;color:#64748b;text-transform:uppercase}
-.topbar h1{font:700 21px "Space Grotesk";margin:2px 0 0}
+/* Topbar */
+.topbar{position:sticky;top:0;z-index:1050;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 28px;background:var(--topbar-bg);border-bottom:1px solid var(--line);box-shadow:var(--shadow);transition:background .2s ease,border-color .2s ease}
+.eyebrow{font-size:9px;letter-spacing:.15em;font-weight:800;color:var(--muted);text-transform:uppercase}
+.topbar h1{font:700 21px "Space Grotesk";margin:2px 0 0;color:var(--ink)}
 .top-controls{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
 
-.city-select-box{display:flex;align-items:center;gap:6px;background:#f8fafc;border:1px solid #cbd5e1;border-radius:9px;padding:5px 9px}
-.city-select-box select{border:0;outline:0;background:transparent;font-size:11px;font-weight:700;color:#1e293b}
+.city-select-box{display:flex;align-items:center;gap:6px;background:var(--input-bg);border:1px solid var(--line);border-radius:9px;padding:5px 9px}
+.city-select-box select{border:0;outline:0;background:transparent;font-size:11px;font-weight:700;color:var(--ink)}
+.city-select-box select option,select option{background:var(--panel);color:var(--ink)}
 
-.primary-btn,.ghost-btn,.accent-btn{border-radius:9px;padding:7px 13px;border:1px solid var(--line);font-weight:700;font-size:11px;background:#fff;color:var(--ink);transition:.15s;display:inline-flex;align-items:center;gap:6px}
+.primary-btn,.ghost-btn,.accent-btn,.theme-toggle-btn{border-radius:9px;padding:7px 13px;border:1px solid var(--line);font-weight:700;font-size:11px;background:var(--panel);color:var(--ink);transition:.15s;display:inline-flex;align-items:center;gap:6px}
 .primary-btn{background:var(--blue);color:#fff;border-color:var(--blue);box-shadow:0 4px 12px rgba(43,84,232,.22)}
 .primary-btn:hover{transform:translateY(-1px);box-shadow:0 6px 16px rgba(43,84,232,.3)}
-.ghost-btn:hover{background:#f8fafc;border-color:#cbd5e1}
-.accent-btn{background:#dc2626;color:#fff;border-color:#dc2626;box-shadow:0 4px 12px rgba(220,38,38,.2)}
+.ghost-btn:hover{background:var(--card-hover);border-color:var(--line)}
+.ghost-btn.is-speaking,.accent-btn.is-speaking{background:#fef2f2 !important;color:#dc2626 !important;border-color:#f87171 !important;box-shadow:0 0 0 3px rgba(220,38,38,.15) !important;animation:ivrPulse 1.4s infinite ease-in-out}
+@keyframes ivrPulse{0%{transform:scale(1)}50%{transform:scale(1.03);box-shadow:0 0 0 6px rgba(220,38,38,.2)!important}100%{transform:scale(1)}}
+.accent-btn{background:var(--red);color:#fff;border-color:var(--red);box-shadow:0 4px 12px rgba(220,38,38,.2)}
 .accent-btn:hover{background:#b91c1c}
 .primary-btn.big,.ghost-btn.big{padding:11px 16px;font-size:12px}
 .full{width:100%;justify-content:center}
 .link-button{border:0;background:transparent;color:var(--blue);font-weight:700;font-size:11px;padding:0}
+
+/* Theme Toggle Button Styles */
+.theme-toggle-btn{background:var(--panel);color:var(--ink);border:1px solid var(--line);cursor:pointer;user-select:none}
+.theme-toggle-btn:hover{background:var(--card-hover);border-color:var(--blue);transform:translateY(-1px)}
+.sidebar-theme-btn{width:28px;height:28px;border-radius:8px;background:#111c2e;border:1px solid #1d2d46;color:#93c5fd;display:grid;place-items:center;font-size:13px;cursor:pointer;transition:all .15s ease}
+.sidebar-theme-btn:hover{background:#1d2e49;color:#fff;border-color:#3b82f6;transform:scale(1.05)}
 
 /* STRICT View Scoping Rules */
 .view{display:none !important;width:100%;max-width:1520px;margin:0 auto;padding:22px 28px 40px}
@@ -90,78 +129,90 @@ body.admin-mode .view.admin-only.active{display:block !important}
 
 /* Hero Cards & KPI Grids */
 .hero-grid{display:grid;grid-template-columns:1.6fr .85fr;gap:16px;margin-bottom:18px}
-.hero-card,.quick-card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.hero-card,.quick-card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);transition:background .2s ease,border-color .2s ease}
 .hero-card{padding:24px}
-.hero-card h2{font:700 28px/1.2 "Space Grotesk";margin:6px 0 10px}
+.hero-card h2{font:700 28px/1.2 "Space Grotesk";margin:6px 0 10px;color:var(--ink)}
 .hero-card p,.quick-card p{color:var(--muted);font-size:12px;line-height:1.6;margin:0}
 .hero-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
-.hero-badge-item{padding:6px 10px;border-radius:8px;background:#f1f5f9;color:#334155;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
+.hero-badge-item{padding:6px 10px;border-radius:8px;background:var(--badge-bg);border:1px solid var(--line-light);color:var(--ink);font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:5px}
 .hero-badge-item b{color:var(--blue)}
 
 .quick-card{padding:20px;display:flex;flex-direction:column}
-.quick-card h3{font:700 19px "Space Grotesk";margin:4px 0 6px}
+.quick-card h3{font:700 19px "Space Grotesk";margin:4px 0 6px;color:var(--ink)}
 .quick-actions{margin-top:auto;display:flex;gap:8px;padding-top:14px}
 
 .kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
-.kpi{padding:16px 18px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px rgba(0,0,0,.02);height:auto;min-height:auto;align-self:start}
+.kpi{padding:16px 18px;background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 3px 12px rgba(0,0,0,.02);height:auto;min-height:auto;align-self:start;transition:background .2s ease}
 .kpi-top{display:flex;justify-content:space-between;align-items:center}
-.kpi-label{font-size:11px;color:#64748b;font-weight:700}
-.kpi-value{font:700 26px "Space Grotesk";margin-top:6px}
-.kpi-note{font-size:10px;color:#94a3b8;margin-top:2px}
+.kpi-label{font-size:11px;color:var(--muted);font-weight:700}
+.kpi-value{font:700 26px "Space Grotesk";margin-top:6px;color:var(--ink)}
+.kpi-note{font-size:10px;color:var(--muted);margin-top:2px}
 .trend{font-size:9px;font-weight:800;padding:3px 7px;border-radius:999px;background:#dcfce7;color:#166534}
 .trend.warn{background:#fef3c7;color:#92400e}
 .trend.danger{background:#fee2e2;color:#991b1b}
+body.dark-mode .trend{background:rgba(34,197,94,.2);color:#86efac}
+body.dark-mode .trend.warn{background:rgba(245,158,11,.2);color:#fcd34d}
+body.dark-mode .trend.danger{background:rgba(239,68,68,.2);color:#fca5a5}
 
 /* Section Grid */
 .section-grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px;margin-bottom:18px;align-items:start}
 .panel{padding:20px}
 .panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
-.panel-head h3{margin:2px 0 0;font:700 16px "Space Grotesk"}
+.panel-head h3{margin:2px 0 0;font:700 16px "Space Grotesk";color:var(--ink)}
 .panel-head p{color:var(--muted);font-size:11px;margin:2px 0 0}
-.tiny-label{font-size:9px;letter-spacing:.14em;font-weight:800;color:#64748b;text-transform:uppercase}
+.tiny-label{font-size:9px;letter-spacing:.14em;font-weight:800;color:var(--muted);text-transform:uppercase}
 
-.mini-map{height:300px;border-radius:12px;overflow:hidden;background:#e2e8f0}
+.mini-map{height:300px;border-radius:12px;overflow:hidden;background:#e2e8f0;position:relative;z-index:1;isolation:isolate}
+.leaflet-container{position:relative;z-index:1 !important;isolation:isolate}
+.leaflet-top,.leaflet-bottom{z-index:10 !important}
+.leaflet-pane{z-index:1 !important}
+.leaflet-tile-pane{z-index:1 !important}
+.leaflet-overlay-pane{z-index:2 !important}
+.leaflet-shadow-pane{z-index:3 !important}
+.leaflet-marker-pane{z-index:4 !important}
+.leaflet-tooltip-pane{z-index:5 !important}
+.leaflet-popup-pane{z-index:6 !important}
 .priority-list{display:grid;gap:8px}
-.priority-item{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:9px 11px;background:#f8fafc;border:1px solid #edf2f7;border-radius:11px;cursor:pointer;transition:.15s}
-.priority-item:hover{background:#f1f5f9;border-color:#cbd5e1}
-.priority-icon{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:#fff;font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.05)}
-.priority-item strong{font-size:11px}
-.priority-item span{display:block;color:#64748b;font-size:9px;margin-top:2px}
+.priority-item{display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:10px;padding:9px 11px;background:var(--panel-card);border:1px solid var(--line-light);border-radius:11px;cursor:pointer;transition:.15s;color:var(--ink)}
+.priority-item:hover{background:var(--card-hover);border-color:var(--line)}
+.priority-icon{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--panel);border:1px solid var(--line-light);font-size:15px;box-shadow:0 2px 6px rgba(0,0,0,.05);color:var(--ink)}
+.priority-item strong{font-size:11px;color:var(--ink)}
+.priority-item span{display:block;color:var(--muted);font-size:9px;margin-top:2px}
 
 /* Form & Report Layout */
 .page-intro{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;margin-bottom:16px}
-.page-intro h2{font:700 24px "Space Grotesk";margin:4px 0 3px}
+.page-intro h2{font:700 24px "Space Grotesk";margin:4px 0 3px;color:var(--ink)}
 .page-intro p{color:var(--muted);font-size:11px;margin:0}
 
 .sample-pickers{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 14px}
-.sample-pill{border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:5px 9px;font-size:10px;font-weight:700;color:#334155;transition:.15s}
-.sample-pill:hover{background:#e2e8f0;border-color:#94a3b8}
+.sample-pill{border:1px solid var(--pill-border);background:var(--pill-bg);border-radius:8px;padding:5px 9px;font-size:10px;font-weight:700;color:var(--pill-color);transition:.15s}
+.sample-pill:hover{background:var(--card-hover);border-color:var(--blue);color:var(--ink)}
 
 .form-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:start}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.form-grid label,.form-panel>label{display:grid;gap:5px;font-size:10px;font-weight:800;color:#475569;text-transform:uppercase;letter-spacing:.04em}
-.form-grid input,.form-grid select,.form-grid textarea,.searchbox{width:100%;border:1px solid var(--line);border-radius:8px;background:#f8fafc;padding:8px 11px;color:var(--ink);outline:none;font-size:11px}
-.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.15);background:#fff}
+.form-grid label,.form-panel>label{display:grid;gap:5px;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.form-grid input,.form-grid select,.form-grid textarea,.searchbox{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--input-bg);padding:8px 11px;color:var(--ink);outline:none;font-size:11px}
+.form-grid input:focus,.form-grid select:focus,.form-grid textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,.15);background:var(--input-focus-bg)}
 .span-2{grid-column:span 2}
 
-.upload-drop{min-height:170px;border:2px dashed #cbd5e1;border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:#f8fafc;color:#64748b;text-align:center;padding:16px;cursor:pointer;transition:.15s}
-.upload-drop:hover{border-color:#3b82f6;background:#f0f7ff}
+.upload-drop{min-height:170px;border:2px dashed var(--pill-border);border-radius:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;background:var(--panel-card);color:var(--muted);text-align:center;padding:16px;cursor:pointer;transition:.15s}
+.upload-drop:hover{border-color:var(--blue);background:var(--card-hover)}
 .upload-drop input{display:none}
-.upload-icon{width:38px;height:38px;border-radius:9px;background:#eff6ff;color:var(--blue);display:grid;place-items:center;font-size:17px;font-weight:800}
+.upload-icon{width:38px;height:38px;border-radius:9px;background:var(--badge-bg);color:var(--blue);display:grid;place-items:center;font-size:17px;font-weight:800}
 
 .report-map-wrap{position:relative;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:8px}
-.report-map{height:240px;background:#e2e8f0}
+.report-map{height:240px;background:#e2e8f0;position:relative;z-index:1;isolation:isolate}
 .report-map-search{display:flex;gap:6px;margin-bottom:8px}
-.report-map-search input{flex:1;border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px;font-size:11px}
+.report-map-search input{flex:1;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;background:var(--input-bg);color:var(--ink)}
 
 /* Scanner & AI Studio */
 .scan-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start}
 .preview-wrap{margin:12px 0;border-radius:12px;background:#09101d;overflow:hidden;display:grid;place-items:center;min-height:200px}
 .preview-wrap img,.preview-wrap video{max-width:100%;max-height:480px;object-fit:contain}
 .detection-meta-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
-.meta-card{padding:9px;border:1px solid var(--line);border-radius:9px;background:#f8fafc}
-.meta-card span{display:block;font-size:9px;color:#64748b;text-transform:uppercase;font-weight:700}
-.meta-card b{display:block;margin-top:2px;font-size:11px}
+.meta-card{padding:9px;border:1px solid var(--line);border-radius:9px;background:var(--panel-card);color:var(--ink)}
+.meta-card span{display:block;font-size:9px;color:var(--muted);text-transform:uppercase;font-weight:700}
+.meta-card b{display:block;margin-top:2px;font-size:11px;color:var(--ink)}
 
 /* Car Dashcam Studio */
 .dashcam-layout{display:grid;grid-template-columns:1.35fr .65fr;gap:16px;align-items:start}
@@ -169,44 +220,48 @@ body.admin-mode .view.admin-only.active{display:block !important}
 .dashcam-stage img,.dashcam-stage video{width:100%;max-height:380px;object-fit:contain}
 .dashcam-hud{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;pointer-events:none;z-index:10}
 .hud-pill{background:rgba(9,16,29,.85);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.15);border-radius:8px;padding:5px 9px;color:#fff;font-size:10px;font-weight:700}
-.dashcam-timeline{margin-top:10px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
-.timeline-track{position:relative;height:12px;background:#e2e8f0;border-radius:99px;margin:8px 0;cursor:pointer}
+.dashcam-timeline{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink)}
+.timeline-track{position:relative;height:12px;background:var(--input-bg);border:1px solid var(--line);border-radius:99px;margin:8px 0;cursor:pointer}
 .timeline-pin{position:absolute;top:-4px;width:18px;height:20px;border-radius:4px;background:#ef4444;border:2px solid #fff;transform:translateX(-50%);box-shadow:0 2px 6px rgba(0,0,0,.3)}
 
 /* Table & Filters */
 .toolbar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
-.searchbox{flex:1;min-width:220px;display:flex;align-items:center;gap:7px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:6px 10px}
-.searchbox input{border:0;outline:0;background:transparent;font-size:11px;width:100%}
-.toolbar select{background:#fff;border:1px solid #cbd5e1;border-radius:8px;padding:6px 9px;font-size:11px}
+.searchbox{flex:1;min-width:220px;display:flex;align-items:center;gap:7px;background:var(--input-bg);border:1px solid var(--line);border-radius:8px;padding:6px 10px}
+.searchbox input{border:0;outline:0;background:transparent;font-size:11px;width:100%;color:var(--ink)}
+.toolbar select{background:var(--input-bg);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:11px;color:var(--ink)}
 .table-panel{padding:0;overflow:hidden}
 .table-wrap{overflow-x:auto}
 table{width:100%;border-collapse:collapse;min-width:880px}
-th,td{text-align:left;padding:11px 13px;border-bottom:1px solid #edf2f7;font-size:11px}
-th{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:#64748b;background:#f8fafc}
-tbody tr:hover{background:#f8fafc}
+th,td{text-align:left;padding:11px 13px;border-bottom:1px solid var(--line-light);font-size:11px;color:var(--ink)}
+th{font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);background:var(--th-bg);border-bottom:1px solid var(--line)}
+tbody tr:hover{background:var(--tr-hover)}
 .badge{display:inline-flex;padding:3px 7px;border-radius:999px;font-size:9px;font-weight:800}
 .badge.critical{background:#fee2e2;color:#b91c1c}
 .badge.high{background:#fef3c7;color:#b45309}
 .badge.medium{background:#e0f2fe;color:#0369a1}
 .badge.low{background:#dcfce7;color:#15803d}
-.badge.status{background:#f1f5f9;color:#475569}
+.badge.status{background:var(--badge-bg);color:var(--muted);border:1px solid var(--line-light)}
+body.dark-mode .badge.critical{background:rgba(239,68,68,.2);color:#fca5a5}
+body.dark-mode .badge.high{background:rgba(245,158,11,.2);color:#fcd34d}
+body.dark-mode .badge.medium{background:rgba(59,130,246,.2);color:#93c5fd}
+body.dark-mode .badge.low{background:rgba(34,197,94,.2);color:#86efac}
 
 /* Large Live Map */
-.main-map{height:540px;border-radius:12px;overflow:hidden;background:#e2e8f0}
-.map-toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:9px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:11px 11px 0 0}
-.map-toolbar input,.map-toolbar select{border:1px solid #cbd5e1;border-radius:7px;padding:5px 8px;font-size:11px;background:#fff}
+.main-map{height:540px;border-radius:12px;overflow:hidden;background:#e2e8f0;position:relative;z-index:1;isolation:isolate}
+.map-toolbar{display:flex;gap:6px;flex-wrap:wrap;align-items:center;padding:9px;background:var(--panel-card);border:1px solid var(--line);border-radius:11px 11px 0 0}
+.map-toolbar input,.map-toolbar select{border:1px solid var(--line);border-radius:7px;padding:5px 8px;font-size:11px;background:var(--input-bg);color:var(--ink)}
 
-/* Government Admin View: Fixed Alignment and Zero Stretching */
+/* Government Admin View */
 #view-administration{width:100%}
 .admin-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px;align-items:start}
 .admin-kpi-grid .kpi{height:auto;min-height:auto;align-self:start;box-shadow:0 3px 12px rgba(0,0,0,.02)}
 .admin-grid{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(300px,0.6fr);gap:18px;align-items:start;margin-bottom:20px}
-.admin-grid .panel{height:auto;align-self:start;background:#fff;padding:18px;border:1px solid var(--line);border-radius:var(--radius)}
+.admin-grid .panel{height:auto;align-self:start;background:var(--panel);padding:18px;border:1px solid var(--line);border-radius:var(--radius)}
 #adminQueueContainer{max-height:680px;overflow-y:auto;padding-right:4px}
 #authoritiesListContainer{max-height:680px;overflow-y:auto;padding-right:4px}
 
-.admin-issue-card{border:1px solid #e2e8f0;background:#f8fafc;border-radius:12px;padding:12px 14px;margin-bottom:10px;transition:.15s}
-.admin-issue-card:hover{background:#fff;border-color:#93c5fd;box-shadow:0 4px 14px rgba(0,0,0,.04)}
+.admin-issue-card{border:1px solid var(--line);background:var(--panel-card);border-radius:12px;padding:12px 14px;margin-bottom:10px;transition:.15s;color:var(--ink)}
+.admin-issue-card:hover{background:var(--panel);border-color:var(--blue);box-shadow:var(--shadow)}
 .admin-card-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
 .admin-actions-bar{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
 
@@ -218,12 +273,38 @@ tbody tr:hover{background:#f8fafc}
 .comp-label.resolved{background:#166534;color:#dcfce7}
 
 /* Modals */
-.modal{position:fixed;inset:0;background:rgba(9,16,29,.65);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;z-index:100}
+.modal{position:fixed;inset:0;background:rgba(9,16,29,.65);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;z-index:2000}
 .modal.hidden{display:none}
-.modal-card{width:min(760px,100%);max-height:90vh;overflow-y:auto;background:#fff;border-radius:16px;padding:22px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.3)}
-.modal-close{position:absolute;right:14px;top:14px;border:0;background:#f1f5f9;width:30px;height:30px;border-radius:8px;font-size:18px;display:grid;place-items:center}
+.modal-card{width:min(760px,100%);max-height:90vh;overflow-y:auto;background:var(--modal-bg);border:1px solid var(--line);border-radius:16px;padding:22px;position:relative;box-shadow:0 25px 80px rgba(0,0,0,.5);color:var(--ink)}
+.modal-close{position:absolute;right:14px;top:14px;border:1px solid var(--line);background:var(--panel-card);color:var(--ink);width:30px;height:30px;border-radius:8px;font-size:18px;display:grid;place-items:center;transition:.15s}
+.modal-close:hover{background:var(--card-hover)}
 
-.toast{position:fixed;right:20px;bottom:20px;z-index:200;min-width:250px;max-width:380px;background:#0f172a;color:#fff;padding:11px 15px;border-radius:11px;font-size:11px;font-weight:600;box-shadow:0 16px 40px rgba(0,0,0,.25);transform:translateY(30px);opacity:0;pointer-events:none;transition:.25s}
+/* Dark Mode Overrides & Specific Map Styling */
+body.dark-mode select, html.dark-mode select { background-color: var(--input-bg) !important; color: var(--ink) !important; border-color: var(--line) !important; }
+body.dark-mode select option, html.dark-mode select option { background-color: #111a2b !important; color: #e2e8f0 !important; }
+body.dark-mode #adminFilterStatusSelect { background: var(--input-bg) !important; color: var(--ink) !important; border-color: var(--line) !important; }
+body.dark-mode .admin-issue-card { background: var(--panel-card) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+body.dark-mode .admin-quick-status-row, body.dark-mode .admin-issue-card div[style*="background:#fff"], body.dark-mode .admin-issue-card div[style*="background: #fff"], body.dark-mode .admin-issue-card div[style*="background:var(--panel)"] { background: #111a2b !important; border-color: var(--line) !important; }
+body.dark-mode .admin-quick-select, body.dark-mode .admin-issue-card select { background-color: #0c1422 !important; color: #e2e8f0 !important; border-color: var(--line) !important; }
+body.dark-mode #routingInfoBox { background: var(--panel-card) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+body.dark-mode #predictiveCardsList > div, body.dark-mode #zoneHealthList > div, body.dark-mode #authoritiesListContainer > div { background: var(--panel-card) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+body.dark-mode #predictiveCardsList > div > div[style*="color:#475569"], body.dark-mode #authoritiesListContainer > div > div[style*="color:#475569"] { color: var(--muted) !important; }
+body.dark-mode .modal-card div[style*="background:#f8fafc"] { background: var(--panel-card) !important; border-color: var(--line) !important; color: var(--ink) !important; }
+body.dark-mode .modal-card input, body.dark-mode .modal-card select, body.dark-mode .modal-card textarea { background: var(--input-bg) !important; color: var(--ink) !important; border-color: var(--line) !important; }
+body.dark-mode .modal-card label[style*="border:1px solid #cbd5e1"] { border-color: var(--line) !important; background: var(--panel-card) !important; color: var(--ink) !important; }
+body.dark-mode #modalContent div[style*="background:#ecfdf5"] { background: rgba(6, 95, 70, 0.25) !important; border-color: #059669 !important; color: #a7f3d0 !important; }
+body.dark-mode #modalContent div[style*="background:#ecfdf5"] strong { color: #34d399 !important; }
+body.dark-mode #modalContent div[style*="background:#ecfdf5"] span { color: #6ee7b7 !important; }
+body.dark-mode tr[style*="background:#eff6ff"] { background: rgba(59, 130, 246, 0.18) !important; color: #93c5fd !important; }
+body.dark-mode .leaflet-tile-pane { filter: brightness(0.7) invert(1) contrast(2.4) hue-rotate(200deg) saturate(0.35); }
+body.dark-mode .mini-map, body.dark-mode .main-map, body.dark-mode .report-map { background: #090e17; }
+body.dark-mode .leaflet-popup-content-wrapper, body.dark-mode .leaflet-popup-tip { background: #111a2b !important; color: #e2e8f0 !important; border: 1px solid #1e2d46 !important; box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important; }
+body.dark-mode .leaflet-container a.leaflet-popup-close-button { color: #94a3b8 !important; }
+body.dark-mode .leaflet-bar a { background-color: #111a2b !important; border-bottom: 1px solid #1e2d46 !important; color: #e2e8f0 !important; }
+body.dark-mode .leaflet-bar a:hover { background-color: #19273f !important; color: #ffffff !important; }
+body.dark-mode footer.footer { border-top-color: var(--line) !important; color: var(--muted) !important; }
+
+.toast{position:fixed;right:20px;bottom:20px;z-index:3000;min-width:250px;max-width:380px;background:#0f172a;color:#fff;padding:11px 15px;border-radius:11px;font-size:11px;font-weight:600;box-shadow:0 16px 40px rgba(0,0,0,.25);transform:translateY(30px);opacity:0;pointer-events:none;transition:.25s}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{background:#065f46;border-left:4px solid #10b981}
 .toast.error{background:#881337;border-left:4px solid #f43f5e}
@@ -307,7 +388,10 @@ tbody tr:hover{background:#f8fafc}
     </nav>
 
     <div class="sidebar-footer">
-      <div class="status-pill live" id="apiStatus"><span></span> SQLite Connected</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div class="status-pill live" id="apiStatus"><span></span> SQLite Connected</div>
+        <button type="button" class="sidebar-theme-btn" id="sidebarThemeToggleBtn" title="Toggle Theme" onclick="toggleTheme()" aria-label="Toggle Dark or Light Mode">🌙</button>
+      </div>
       <div style="font-size:9px;color:#64748b">YOLOv8 + Deformable Attention • Pan-India</div>
     </div>
   </aside>
@@ -316,8 +400,8 @@ tbody tr:hover{background:#f8fafc}
   <main class="main">
     <header class="topbar">
       <div>
-        <div class="eyebrow" id="topbarEyebrow">PAN-INDIA URBAN OPERATIONS</div>
-        <h1 id="topbarTitle">City Infrastructure Command</h1>
+        <div class="eyebrow" id="topbarEyebrow">OPERATIONS</div>
+        <h1 id="topbarTitle">Infrastructure Command</h1>
       </div>
       <div class="top-controls">
         <div class="city-select-box" title="Select Urban Local Body / Smart City">
@@ -337,7 +421,11 @@ tbody tr:hover{background:#f8fafc}
           </select>
         </div>
 
-        <button type="button" class="ghost-btn" id="voiceAlertAudioBtn" title="Voice Announcement Test">🔊 Voice IVR</button>
+        <button type="button" class="theme-toggle-btn" id="themeToggleBtn" title="Toggle Dark / Light Mode" onclick="toggleTheme()" aria-label="Toggle Theme">
+          <span class="theme-icon">🌙</span> <span class="theme-text">Dark Mode</span>
+        </button>
+
+        <button type="button" class="ghost-btn" id="voiceAlertAudioBtn" title="Voice Announcement Test" onclick="toggleVoiceIvr(this)">🔊 Voice IVR</button>
         <button type="button" class="primary-btn citizen-only" data-view-link="report">+ Report Defect</button>
         <button type="button" class="accent-btn admin-only" id="adminTopDispatchBtn">🚨 Emergency Alert</button>
       </div>
@@ -347,22 +435,22 @@ tbody tr:hover{background:#f8fafc}
     <section class="view active" id="view-dashboard">
       <div class="hero-grid">
         <div class="hero-card">
-          <div class="tiny-label">AI + GIS URBAN ACCOUNTABILITY PLATFORM</div>
-          <h2>Smart Infrastructure Defect Detection & Civic Governance</h2>
-          <p>Autonomous defect identification with YOLOv8, live GPS geotagging, ward/department routing, multi-channel authority notification (Call, SMS, WhatsApp, Email), and end-to-end resolution evidence.</p>
+          <div class="tiny-label">OVERVIEW</div>
+          <h2>Defect Detection & Governance</h2>
+          <p>AI defect detection, live GIS geotagging, authority routing, and resolution tracking.</p>
           <div class="hero-badges">
-            <span class="hero-badge-item"><b>01</b> Multi-Defect Vision AI</span>
-            <span class="hero-badge-item"><b>02</b> Dashcam Continuous Scan</span>
-            <span class="hero-badge-item"><b>03</b> Ward/ULB GIS Routing</span>
-            <span class="hero-badge-item"><b>04</b> Multi-Channel Dispatch</span>
-            <span class="hero-badge-item"><b>05</b> Before-After Verification</span>
+            <span class="hero-badge-item"><b>01</b> Vision AI</span>
+            <span class="hero-badge-item"><b>02</b> Dashcam Scan</span>
+            <span class="hero-badge-item"><b>03</b> GIS Routing</span>
+            <span class="hero-badge-item"><b>04</b> Alerts</span>
+            <span class="hero-badge-item"><b>05</b> Verification</span>
           </div>
         </div>
 
         <div class="quick-card">
-          <div class="tiny-label">CITIZEN & INSPECTION ACTION</div>
-          <h3>Report Road Defect</h3>
-          <p>Upload smartphone photos, trigger camera capture, or run live car dashcam video. AI extracts the defect and files the complaint instantly.</p>
+          <div class="tiny-label">ACTION</div>
+          <h3>Report Defect</h3>
+          <p>Upload photos or dashcam video for instant AI defect logging.</p>
           <div class="quick-actions">
             <button type="button" class="primary-btn citizen-only" data-view-link="report">File Report</button>
             <button type="button" class="ghost-btn citizen-only" data-view-link="scan">AI Scan</button>
@@ -377,8 +465,8 @@ tbody tr:hover{background:#f8fafc}
         <div class="panel">
           <div class="panel-head">
             <div>
-              <div class="tiny-label">LIVE GIS LAYER</div>
-              <h3>Infrastructure Defect Hotspots</h3>
+              <div class="tiny-label">GIS</div>
+              <h3>Defect Hotspots</h3>
             </div>
             <button type="button" class="link-button" data-view-link="map">View Full Map →</button>
           </div>
@@ -388,8 +476,8 @@ tbody tr:hover{background:#f8fafc}
         <div class="panel">
           <div class="panel-head">
             <div>
-              <div class="tiny-label">PRIORITY QUEUE</div>
-              <h3>Critical Civic Hazards</h3>
+              <div class="tiny-label">QUEUE</div>
+              <h3>Critical Hazards</h3>
             </div>
             <button type="button" class="link-button" data-view-link="issues">View All →</button>
           </div>
@@ -402,11 +490,11 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-report">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">CITIZEN GRIEVANCE PORTAL</div>
-          <h2>Report Infrastructure Defect</h2>
-          <p>Attach photo or video evidence. Click <strong>Auto-Extract with AI</strong> to automatically detect defect type, severity, and extract GPS coordinates!</p>
+          <div class="tiny-label">GRIEVANCES</div>
+          <h2>Report Defect</h2>
+          <p>Upload evidence to auto-detect defect details and location.</p>
         </div>
-        <div class="status-pill live">AI Auto-Extraction Active</div>
+        <div class="status-pill live">AI Active</div>
       </div>
 
       <div class="sample-pickers">
@@ -495,9 +583,9 @@ tbody tr:hover{background:#f8fafc}
 
         <!-- Location GIS Picker -->
         <div class="panel form-panel">
-          <div class="tiny-label">GIS GEOTAGGING</div>
-          <h3 style="margin:4px 0 10px;font:700 16px 'Space Grotesk'">Pin Exact Location on Map</h3>
-          <p style="font-size:11px;color:#64748b;margin:0 0 8px">Search any landmark, address, or click anywhere on the map to drop the GPS coordinates.</p>
+          <div class="tiny-label">LOCATION</div>
+          <h3 style="margin:4px 0 10px;font:700 16px 'Space Grotesk'">Pin Location on Map</h3>
+          <p style="font-size:11px;color:#64748b;margin:0 0 8px">Search address or click on the map to set coordinates.</p>
 
           <div class="report-map-search">
             <input id="reportMapSearchInput" placeholder="Search address, landmark or pincode..." />
@@ -534,11 +622,11 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-scan">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">COMPUTER VISION & DEEP LEARNING</div>
-          <h2>AI Defect Detection Studio</h2>
-          <p>Enhanced YOLOv8 inference with Deformable Attention, Slim-Neck, and Multi-Defect Vision classifier. Generates labeled bounding boxes and severity metrics.</p>
+          <div class="tiny-label">VISION AI</div>
+          <h2>AI Detection Studio</h2>
+          <p>Run YOLOv8 inference to detect defect classes, bounding boxes, and severity.</p>
         </div>
-        <div class="status-pill live" id="scanModelPill">YOLOv8 Weights Ready</div>
+        <div class="status-pill live" id="scanModelPill">YOLOv8 Ready</div>
       </div>
 
       <div class="sample-pickers">
@@ -555,7 +643,7 @@ tbody tr:hover{background:#f8fafc}
       <div class="scan-grid">
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">INPUT EVIDENCE</div><h3>Original Image / Video</h3></div>
+            <div><div class="tiny-label">INPUT</div><h3>Media Input</h3></div>
           </div>
           <label class="upload-drop" for="scanFileInput">
             <input id="scanFileInput" type="file" accept="image/*,video/*" />
@@ -571,12 +659,12 @@ tbody tr:hover{background:#f8fafc}
 
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">AI OUTPUT</div><h3>Annotated Detections</h3></div>
+            <div><div class="tiny-label">OUTPUT</div><h3>Detections</h3></div>
             <span class="status-pill" id="scanStatusBadge">Idle</span>
           </div>
 
           <div id="scanResultPlaceholder" style="padding:40px;text-align:center;color:#94a3b8;font-size:12px">
-            Upload an image or pick a sample to view real-time YOLO bounding box predictions and severity analysis.
+            Select media or a sample to view detections and metrics.
           </div>
 
           <div id="scanResultOutput" style="display:none">
@@ -603,11 +691,11 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-dashcam">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">VEHICLE TELEMETRY & PASSIVE SCAN</div>
-          <h2>Car Dashcam Inspection Studio</h2>
-          <p>Continuous vehicle ride-along footage analysis. Samples road frames, identifies potholes/cracks/defects at highway speeds, logs GPS coordinates, and computes the Road Health Index.</p>
+          <div class="tiny-label">TELEMETRY</div>
+          <h2>Dashcam Studio</h2>
+          <p>Analyze ride-along footage for road defects and health indexing.</p>
         </div>
-        <div class="status-pill live">Continuous CV Scanner</div>
+        <div class="status-pill live">Continuous Scan</div>
       </div>
 
       <div class="sample-pickers">
@@ -650,7 +738,7 @@ tbody tr:hover{background:#f8fafc}
 
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">INSPECTION LOG</div><h3>Detected Route Incidents</h3></div>
+            <div><div class="tiny-label">LOG</div><h3>Route Incidents</h3></div>
           </div>
           <div id="dashcamEventsList" style="display:grid;gap:8px;max-height:420px;overflow-y:auto"></div>
         </div>
@@ -661,9 +749,9 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-issues">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">CIVIC GRIEVANCES & TRACKING</div>
-          <h2>Issue Registry & Status Tracker</h2>
-          <p>Track reported complaints through their lifecycle: Pending Review → Assigned → In Progress → Resolved with Before & After verification.</p>
+          <div class="tiny-label">REGISTRY</div>
+          <h2>Issue Registry</h2>
+          <p>Track complaint status and verification proof.</p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
           <button type="button" class="ghost-btn" id="clearTestIssuesBtn" style="color:#ef4444;border-color:#fca5a5" title="Remove all generated test and dashcam simulation issues">🗑️ Clear Dummy / Test Issues</button>
@@ -728,9 +816,9 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-map">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">GIS SPATIAL INTELLIGENCE</div>
-          <h2>Live Infrastructure Map</h2>
-          <p>Full-screen interactive Pan-India GIS map. View defect density, filter by severity, and pinpoint issue locations.</p>
+          <div class="tiny-label">GIS</div>
+          <h2>Live Map</h2>
+          <p>Interactive spatial map for defect locations and severity filters.</p>
         </div>
         <div class="map-legend" style="display:flex;gap:12px">
           <span style="font-size:11px;font-weight:700"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#dc2626;margin-right:4px"></span> Critical</span>
@@ -775,9 +863,9 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-maintenance">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">PREDICTIVE ANALYTICS & CITY INDEX</div>
-          <h2>Predictive Infrastructure Health</h2>
-          <p>Bayesian failure probability modeling based on crack density, defect age, traffic load, and upcoming monsoon risk.</p>
+          <div class="tiny-label">ANALYTICS</div>
+          <h2>Predictive Health</h2>
+          <p>Risk forecasting based on surface degradation and traffic load.</p>
         </div>
       </div>
 
@@ -807,14 +895,14 @@ tbody tr:hover{background:#f8fafc}
       <div class="section-grid">
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">HOTSPOT FORECASTING</div><h3>Roads Predicted to Fail Before Monsoon</h3></div>
+            <div><div class="tiny-label">FORECASTING</div><h3>Pre-Monsoon Risk Corridors</h3></div>
           </div>
           <div id="predictiveCardsList" style="display:grid;gap:10px"></div>
         </div>
 
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">ZONE BREAKDOWN</div><h3>Municipal Zone Health Index</h3></div>
+            <div><div class="tiny-label">BREAKDOWN</div><h3>Zone Health Index</h3></div>
           </div>
           <div id="zoneHealthList" style="display:grid;gap:12px"></div>
         </div>
@@ -825,37 +913,37 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-modelhub">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">ACADEMIC & RESEARCH ARCHITECTURE</div>
-          <h2>AI Models, Datasets & Training Hub</h2>
-          <p>Implementation of enhanced YOLOv8 with Deformable Attention Transformer, GSConv slim-neck, and MPDIoU loss (Yiwen Jiang 2024, Discover Applied Sciences).</p>
+          <div class="tiny-label">AI ARCHITECTURE</div>
+          <h2>Model Hub & Datasets</h2>
+          <p>Enhanced YOLOv8 benchmarks and training datasets.</p>
         </div>
       </div>
 
       <div class="hero-grid">
         <div class="hero-card">
-          <div class="tiny-label">ENHANCED YOLOV8 ARCHITECTURAL SPECIFICATIONS</div>
-          <h3 style="font:700 20px 'Space Grotesk';margin:6px 0">Architectural Innovations & Benchmark</h3>
+          <div class="tiny-label">ARCHITECTURE</div>
+          <h3 style="font:700 20px 'Space Grotesk';margin:6px 0">Key Innovations</h3>
           <p style="font-size:12px;line-height:1.6">
-            <strong>1. C2f_DAttn Module:</strong> Integrates Deformable Attention Transformer (DAT) into YOLOv8's C2f block to dynamically focus on irregular crack geometries.<br/>
-            <strong>2. VoVGSCSP Slim-Neck:</strong> Integrates GSConv grouped separable convolutions to reduce model parameters to 11.8 MB at 369 FPS.<br/>
-            <strong>3. MPDIoU Loss:</strong> Minimizes bounding box corner coordinate distances for faster regression convergence.
+            • <strong>C2f_DAttn:</strong> Deformable attention for irregular defect geometries.<br/>
+            • <strong>VoVGSCSP Slim-Neck:</strong> Lightweight feature fusion (11.8 MB @ 369 FPS).<br/>
+            • <strong>MPDIoU Loss:</strong> Fast bounding box regression convergence.
           </p>
         </div>
 
         <div class="quick-card">
-          <div class="tiny-label">DATASET REPOSITORY</div>
+          <div class="tiny-label">DATASETS</div>
           <h3 style="font:700 18px 'Space Grotesk';margin:4px 0">RDD2022 Benchmark</h3>
           <p style="font-size:11px;line-height:1.5">
-            • 47,420 road images from India, Japan, Czech Republic, US, Norway, China.<br/>
-            • 55,000+ annotations across 4 damage types (D00, D10, D20, D40).<br/>
-            • Extended multi-defect dataset pipeline for streetlights, garbage & drainage.
+            • 47,420 multi-national road distress images.<br/>
+            • 55,000+ annotations across classes D00–D40.<br/>
+            • Augmented multi-class civic hazard annotations.
           </p>
         </div>
       </div>
 
       <div class="panel">
         <div class="panel-head">
-          <div><div class="tiny-label">COMPARATIVE EXPERIMENTAL RESULTS</div><h3>Model Performance Comparison (Table 2 from Research Paper)</h3></div>
+          <div><div class="tiny-label">BENCHMARK</div><h3>Model Comparison</h3></div>
         </div>
         <div class="table-wrap">
           <table>
@@ -887,9 +975,9 @@ tbody tr:hover{background:#f8fafc}
     <section class="view" id="view-administration">
       <div class="page-intro">
         <div>
-          <div class="tiny-label">GOVERNMENT & MUNICIPAL COMMAND CENTER</div>
-          <h2>Administrator Triage & Dispatch Desk</h2>
-          <p>Review citizen complaints, assign municipal engineering divisions, dispatch emergency multi-channel alerts (Call, SMS, WhatsApp, Email), and verify resolution evidence.</p>
+          <div class="tiny-label">ADMINISTRATION</div>
+          <h2>Triage & Dispatch Desk</h2>
+          <p>Manage complaints, assign authorities, and dispatch alerts.</p>
         </div>
       </div>
 
@@ -898,9 +986,9 @@ tbody tr:hover{background:#f8fafc}
       <div class="admin-grid">
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">INCOMING COMPLAINTS</div><h3>Triage & Assignment Queue</h3></div>
+            <div><div class="tiny-label">QUEUE</div><h3>Triage Queue</h3></div>
             <div style="display:flex;gap:6px">
-              <select id="adminFilterStatusSelect">
+              <select id="adminFilterStatusSelect" style="background:var(--input-bg);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;font-weight:600;outline:none;cursor:pointer">
                 <option value="all">All Status</option>
                 <option value="Not assigned">Pending / Not assigned</option>
                 <option value="Assigned">Assigned</option>
@@ -914,7 +1002,7 @@ tbody tr:hover{background:#f8fafc}
 
         <div class="panel">
           <div class="panel-head">
-            <div><div class="tiny-label">AUTHORITY DIRECTORY</div><h3>Pan-India Municipal Contacts</h3></div>
+            <div><div class="tiny-label">DIRECTORY</div><h3>Municipal Contacts</h3></div>
           </div>
           <div id="authoritiesListContainer" style="display:grid;gap:8px;max-height:540px;overflow-y:auto"></div>
         </div>
@@ -922,7 +1010,7 @@ tbody tr:hover{background:#f8fafc}
     </section>
 
     <!-- FOOTER -->
-    <footer class="footer" style="padding:18px 28px;border-top:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;font-size:10px;color:#64748b">
+    <footer class="footer" style="padding:18px 28px;border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--muted)">
       <div><strong>URBAN-EYES</strong> • AI-Based Multi-Infrastructure Defect Detection & Civic Governance Platform</div>
       <div>ABESEC Ghaziabad • Session 2026-27 • Team Luven Sharma, Krishna Pandey, Khushi Poddar, Khushboo</div>
     </footer>
@@ -941,36 +1029,36 @@ tbody tr:hover{background:#f8fafc}
 <div id="dispatchAlertModal" class="modal hidden">
   <div class="modal-card" style="width:min(600px,100%)">
     <button type="button" class="modal-close" id="dispatchModalCloseBtn">×</button>
-    <div class="tiny-label" style="color:#dc2626">🚨 EMERGENCY CIVIC DISPATCH</div>
-    <h3 style="font:700 20px 'Space Grotesk';margin:6px 0 10px">Transmit Multi-Channel Authority Alerts</h3>
-    <p style="font-size:11px;color:#64748b;margin:0 0 14px">Immediate notification transmission to the responsible Executive Engineer, Ward Officer, and Contractor Crew.</p>
+    <div class="tiny-label" style="color:#dc2626">DISPATCH ALERT</div>
+    <h3 style="font:700 20px 'Space Grotesk';margin:6px 0 10px">Emergency Alert Dispatch</h3>
+    <p style="font-size:11px;color:#64748b;margin:0 0 14px">Notify designated municipal officer and repair crew.</p>
 
-    <div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:12px;padding:12px;margin-bottom:14px">
+    <div style="background:var(--panel-card);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:14px">
       <div style="font-size:11px;font-weight:700" id="dispatchIssueHeader">Ticket UE-26091 — Pothole (Critical)</div>
-      <div style="font-size:10px;color:#64748b;margin-top:2px" id="dispatchLocationHeader">Location: Model Town Main Road, Delhi</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px" id="dispatchLocationHeader">Location: Model Town Main Road, Delhi</div>
     </div>
 
-    <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">SELECT DISPATCH CHANNELS:</label>
+    <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">SELECT DISPATCH CHANNELS:</label>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
-      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--panel-card)">
         <input type="checkbox" id="chkEmail" checked /> 📧 Official Email Memo
       </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--panel-card)">
         <input type="checkbox" id="chkSms" checked /> 📱 SMS Dispatch Text
       </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--panel-card)">
         <input type="checkbox" id="chkWhatsapp" checked /> 💬 WhatsApp Direct Chat
       </label>
-      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid #cbd5e1;border-radius:8px;cursor:pointer">
+      <label style="display:flex;align-items:center;gap:8px;font-size:11px;padding:10px;border:1px solid var(--line);border-radius:8px;cursor:pointer;background:var(--panel-card)">
         <input type="checkbox" id="chkCall" checked /> 📞 Automated Voice Call IVR
       </label>
     </div>
 
-    <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">TARGET MUNICIPAL LOCAL BODY:</label>
-    <select id="dispatchAuthoritySelect" style="width:100%;padding:9px;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;margin-bottom:14px"></select>
+    <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">TARGET MUNICIPAL LOCAL BODY:</label>
+    <select id="dispatchAuthoritySelect" style="width:100%;padding:9px;border:1px solid var(--line);border-radius:8px;font-size:11px;margin-bottom:14px;background:var(--input-bg);color:var(--ink)"></select>
 
-    <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">ADDITIONAL EXECUTIVE DIRECTIVE / NOTES:</label>
-    <textarea id="dispatchCustomNote" rows="2" style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:11px;margin-bottom:16px" placeholder="e.g. Mandate immediate cold-mix pothole filling under safety protocol..."></textarea>
+    <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">ADDITIONAL EXECUTIVE DIRECTIVE / NOTES:</label>
+    <textarea id="dispatchCustomNote" rows="2" style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:11px;margin-bottom:16px;background:var(--input-bg);color:var(--ink)" placeholder="e.g. Mandate immediate cold-mix pothole filling under safety protocol..."></textarea>
 
     <div style="display:flex;gap:8px">
       <button type="button" class="accent-btn big" id="confirmDispatchBtn" style="flex:1">🚨 Transmit Alerts Now</button>
@@ -983,32 +1071,32 @@ tbody tr:hover{background:#f8fafc}
 <div id="resolveModal" class="modal hidden">
   <div class="modal-card" style="width:min(600px,100%)">
     <button type="button" class="modal-close" id="resolveModalCloseBtn">×</button>
-    <div class="tiny-label" style="color:#16a34a">VERIFIED CLOSURE</div>
-    <h3 style="font:700 20px 'Space Grotesk';margin:6px 0 10px">Close Grievance & Upload Repair Proof</h3>
-    <p style="font-size:11px;color:#64748b;margin:0 0 14px">Upload photographic evidence of completed repair work to establish municipal accountability.</p>
+    <div class="tiny-label" style="color:#16a34a">RESOLUTION PROOF</div>
+    <h3 style="font:700 20px 'Space Grotesk';margin:6px 0 10px">Close Issue with Proof</h3>
+    <p style="font-size:11px;color:#64748b;margin:0 0 14px">Upload photographic proof of completed repair work.</p>
 
     <form id="resolveForm">
       <input type="hidden" id="resolveIssueId" />
       <div style="display:grid;gap:12px">
         <div>
-          <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">AFTER-REPAIR EVIDENCE PHOTO</label>
-          <input type="file" id="resolveEvidenceInput" accept="image/*" style="font-size:11px" />
+          <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">AFTER-REPAIR EVIDENCE PHOTO</label>
+          <input type="file" id="resolveEvidenceInput" accept="image/*" style="font-size:11px;color:var(--ink)" />
           <button type="button" class="sample-pill" id="useDemoResolveProofBtn" style="margin-top:6px">✨ Use Verified Demo Repair Photo</button>
         </div>
 
         <div>
-          <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">REPAIR SUMMARY / ENGINEERING METHOD</label>
-          <textarea id="resolveNoteInput" rows="3" required style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:11px" placeholder="e.g. Cleared debris, poured bitumen tack coat, applied warm-mix asphalt, compacted with vibratory roller."></textarea>
+          <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">REPAIR SUMMARY / ENGINEERING METHOD</label>
+          <textarea id="resolveNoteInput" rows="3" required style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:11px;background:var(--input-bg);color:var(--ink)" placeholder="e.g. Cleared debris, poured bitumen tack coat, applied warm-mix asphalt, compacted with vibratory roller."></textarea>
         </div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
           <div>
-            <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">RESOLVED BY / INSPECTOR</label>
-            <input id="resolvedByInput" required style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:11px" value="Er. R. K. Sharma (Superintending Engineer)" />
+            <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">RESOLVED BY / INSPECTOR</label>
+            <input id="resolvedByInput" required style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:11px;background:var(--input-bg);color:var(--ink)" value="Er. R. K. Sharma (Superintending Engineer)" />
           </div>
           <div>
-            <label style="font-size:10px;font-weight:800;color:#475569;display:block;margin-bottom:6px">FINAL REPAIR COST (₹)</label>
-            <input id="resolveCostInput" required style="width:100%;padding:8px;border:1px solid #cbd5e1;border-radius:8px;font-size:11px" value="₹3,500" />
+            <label style="font-size:10px;font-weight:800;color:var(--muted);display:block;margin-bottom:6px">FINAL REPAIR COST (₹)</label>
+            <input id="resolveCostInput" required style="width:100%;padding:8px;border:1px solid var(--line);border-radius:8px;font-size:11px;background:var(--input-bg);color:var(--ink)" value="₹3,500" />
           </div>
         </div>
 
@@ -1019,6 +1107,6 @@ tbody tr:hover{background:#f8fafc}
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=2.3.4"></script>
 </body>
 </html>

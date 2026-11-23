@@ -110,20 +110,157 @@ function badgeStatus(status) {
 }
 
 // ==============================================================================
-// Voice Audio Dispatch Announcement (Web Speech API)
+// Voice Audio Dispatch Announcement (Web Speech API) - Toggle Start/Stop
 // ==============================================================================
-function speakAnnouncement(text) {
-  if (!("speechSynthesis" in window)) {
-    toast("Speech synthesis not supported in this browser.", "info");
-    return;
+let isSpeakingAnnouncement = false;
+let currentUtterance = null;
+let speechStartTimeout = null;
+
+function resetSpeechButtonUI(btn, fallbackText) {
+  if (!btn) return;
+  const defaultHtml = btn.dataset.defaultHtml || fallbackText || "🔊 Voice IVR";
+  btn.innerHTML = defaultHtml;
+  btn.classList.remove("is-speaking");
+  if (btn.dataset.defaultTitle) {
+    btn.title = btn.dataset.defaultTitle;
   }
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.rate = 1.0;
-  utterance.pitch = 1.0;
-  utterance.lang = "en-IN";
-  window.speechSynthesis.speak(utterance);
 }
+
+function setSpeechButtonActiveUI(btn, stopLabel, stopTitle) {
+  if (!btn) return;
+  if (!btn.dataset.defaultHtml) {
+    btn.dataset.defaultHtml = btn.innerHTML;
+  }
+  if (!btn.dataset.defaultTitle) {
+    btn.dataset.defaultTitle = btn.title || "";
+  }
+  btn.innerHTML = stopLabel || "⏹️ Stop IVR";
+  btn.title = stopTitle || "Click to stop voice IVR announcement";
+  btn.classList.add("is-speaking");
+}
+
+function stopAnnouncement() {
+  if (speechStartTimeout) {
+    clearTimeout(speechStartTimeout);
+    speechStartTimeout = null;
+  }
+
+  isSpeakingAnnouncement = false;
+
+  // Immediately silence the utterance object
+  if (currentUtterance) {
+    try {
+      currentUtterance.volume = 0;
+      currentUtterance.onstart = null;
+      currentUtterance.onend = null;
+      currentUtterance.onerror = null;
+      currentUtterance.onpause = null;
+      currentUtterance.onresume = null;
+    } catch (_) {}
+    currentUtterance = null;
+  }
+  window._currentUtterance = null;
+
+  // Stop browser speech synthesis hardware queue
+  if ("speechSynthesis" in window) {
+    try {
+      window.speechSynthesis.pause();
+      window.speechSynthesis.cancel();
+      if (window.speechSynthesis.speaking || window.speechSynthesis.pending) {
+        window.speechSynthesis.resume();
+        window.speechSynthesis.cancel();
+      }
+    } catch (e) {
+      console.warn("Speech cancel error:", e);
+    }
+  }
+
+  // Defensively reset known buttons in the DOM
+  const topVoiceBtn = qs("#voiceAlertAudioBtn");
+  if (topVoiceBtn) resetSpeechButtonUI(topVoiceBtn, "🔊 Voice IVR");
+  const modalVoiceBtn = qs("#listenVoiceCallBtn");
+  if (modalVoiceBtn) resetSpeechButtonUI(modalVoiceBtn, "🔊 Test Voice Call Audio");
+}
+
+function startAnnouncement(text, triggerBtn, stopLabel) {
+  stopAnnouncement();
+
+  speechStartTimeout = setTimeout(() => {
+    if (!("speechSynthesis" in window)) {
+      toast("Speech synthesis not supported in this browser.", "info");
+      return;
+    }
+
+    try {
+      if (window.speechSynthesis.paused) {
+        window.speechSynthesis.resume();
+      }
+    } catch (_) {}
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 1.0;
+    utterance.pitch = 1.0;
+    utterance.lang = "en-IN";
+    utterance.volume = 1.0;
+
+    currentUtterance = utterance;
+    window._currentUtterance = utterance; // Prevent Chrome garbage collection bug
+    isSpeakingAnnouncement = true;
+
+    const btn = triggerBtn || qs("#voiceAlertAudioBtn");
+    if (btn) {
+      setSpeechButtonActiveUI(btn, stopLabel || "⏹️ Stop IVR");
+    }
+
+    utterance.onstart = () => {
+      isSpeakingAnnouncement = true;
+      if (btn) setSpeechButtonActiveUI(btn, stopLabel || "⏹️ Stop IVR");
+    };
+
+    utterance.onend = () => {
+      stopAnnouncement();
+    };
+
+    utterance.onerror = () => {
+      stopAnnouncement();
+    };
+
+    try {
+      window.speechSynthesis.speak(utterance);
+      toast("Voice IVR playing. Click again to stop.", "info");
+    } catch (err) {
+      console.error("Speech speak failed:", err);
+      stopAnnouncement();
+    }
+  }, 40);
+}
+
+// Global toggle functions
+window.toggleVoiceIvr = function(btn) {
+  const triggerBtn = btn || qs("#voiceAlertAudioBtn");
+  if (isSpeakingAnnouncement) {
+    stopAnnouncement();
+    toast("Voice IVR announcement stopped.", "info");
+  } else {
+    const text = "Urgent municipal alert from URBAN-EYES. High severity defect reported on arterial corridor. Immediate field crew dispatch mandated under safety SLA.";
+    startAnnouncement(text, triggerBtn, "⏹️ Stop IVR");
+  }
+};
+
+window.speakAnnouncement = function(text, triggerBtn, stopLabel) {
+  if (isSpeakingAnnouncement) {
+    stopAnnouncement();
+    toast("Voice IVR announcement stopped.", "info");
+  } else {
+    startAnnouncement(text, triggerBtn, stopLabel);
+  }
+};
+
+window.stopAnnouncement = stopAnnouncement;
+
+window.addEventListener("beforeunload", () => {
+  stopAnnouncement();
+});
 
 // ==============================================================================
 // Bootstrap & Data Synchronization
@@ -163,15 +300,15 @@ function navigate(view) {
   qsa(".view").forEach(v => v.classList.toggle("active", v.id === `view-${view}`));
 
   const meta = {
-    dashboard: ["PAN-INDIA URBAN OPERATIONS", "City Infrastructure Command"],
-    report: ["CITIZEN GRIEVANCE PORTAL", "Report Infrastructure Defect"],
-    scan: ["COMPUTER VISION & DEEP LEARNING", "AI Defect Detection Studio"],
-    dashcam: ["VEHICLE TELEMETRY & PASSIVE SCAN", "Car Dashcam Inspection Studio"],
-    issues: ["CIVIC GRIEVANCES & TRACKING", "Issue Registry & Status Tracker"],
-    map: ["GIS SPATIAL INTELLIGENCE", "Live Infrastructure Map"],
-    maintenance: ["PREDICTIVE ANALYTICS & CITY INDEX", "Predictive Infrastructure Health"],
-    modelhub: ["ACADEMIC & RESEARCH ARCHITECTURE", "AI Models, Datasets & Training Hub"],
-    administration: ["GOVERNMENT COMMAND CENTER", "Administrator Triage & Dispatch Desk"]
+    dashboard: ["OPERATIONS", "Infrastructure Command"],
+    report: ["GRIEVANCE PORTAL", "Report Defect"],
+    scan: ["VISION AI", "AI Detection Studio"],
+    dashcam: ["TELEMETRY", "Dashcam Studio"],
+    issues: ["REGISTRY", "Issue Registry"],
+    map: ["GIS", "Live Map"],
+    maintenance: ["ANALYTICS", "Predictive Health"],
+    modelhub: ["AI ARCHITECTURE", "Model Hub & Datasets"],
+    administration: ["ADMINISTRATION", "Triage & Dispatch Desk"]
   };
 
   const [eyebrow, title] = meta[view] || ["URBAN OPERATIONS", "Civic Dashboard"];
@@ -239,9 +376,7 @@ function setupNav() {
   // Voice alert audio tester
   const voiceBtn = qs("#voiceAlertAudioBtn");
   if (voiceBtn) {
-    voiceBtn.addEventListener("click", () => {
-      speakAnnouncement("Urgent municipal alert from URBAN-EYES. High severity defect reported on arterial corridor. Immediate field crew dispatch mandated under safety SLA.");
-    });
+    voiceBtn.onclick = () => window.toggleVoiceIvr(voiceBtn);
   }
 
   // Top emergency dispatch shortcut
@@ -371,7 +506,7 @@ function renderIssueTable() {
       <td style="font-family:'Space Grotesk';font-weight:700;color:#2563eb">${esc(i.id)}</td>
       <td style="min-width:240px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="position:relative;width:52px;height:42px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#0f172a;cursor:pointer;border:1px solid #cbd5e1" onclick="openIssueModal('${i.id}')" title="Click to inspect photo evidence">
+          <div style="position:relative;width:52px;height:42px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#0f172a;cursor:pointer;border:1px solid var(--line)" onclick="openIssueModal('${i.id}')" title="Click to inspect photo evidence">
             <img src="${i.evidenceUrl || '/static/sample_images/pothole_sample.jpg'}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='/static/sample_images/pothole_sample.jpg'" alt="${esc(i.category)}" />
             <span style="position:absolute;bottom:1px;right:2px;background:rgba(0,0,0,0.65);color:#fff;font-size:7px;padding:1px 3px;border-radius:3px">📷</span>
           </div>
@@ -453,13 +588,13 @@ window.openIssueModal = function(id) {
       <div class="meta-card"><span>Dispatch Status</span><b>${esc(issue.dispatchStatus || "Awaiting Review")}</b></div>
     </div>
 
-    <div style="margin-top:12px;font-size:11px;color:#475569;line-height:1.6">
+    <div style="margin-top:12px;font-size:11px;color:var(--muted);line-height:1.6">
       <strong>Incident Description:</strong><br/>
       ${esc(issue.description || "No additional description provided.")}
     </div>
 
     <!-- Actions Bar -->
-    <div class="admin-actions-bar" style="margin-top:18px;border-top:1px solid #e2e8f0;padding-top:14px;flex-wrap:wrap">
+    <div class="admin-actions-bar" style="margin-top:18px;border-top:1px solid var(--line);padding-top:14px;flex-wrap:wrap">
       <button type="button" class="accent-btn" onclick="openDispatchModal('${issue.id}')">🚨 Dispatch Multi-Channel Alerts</button>
       <button type="button" class="primary-btn" onclick="openResolveModal('${issue.id}')" style="background:#16a34a;border-color:#16a34a">✓ Resolve with Proof</button>
       <button type="button" class="ghost-btn" onclick="printWorkOrder('${issue.id}')">📄 Print Work Order</button>
@@ -526,7 +661,13 @@ window.openDispatchModal = function(id) {
   const voiceBtn = qs("#listenVoiceCallBtn");
   if (voiceBtn) {
     voiceBtn.onclick = () => {
-      speakAnnouncement(`URBAN-EYES Emergency Notification for Executive Engineer. Critical ${issue.category} reported at ${issue.location}. Priority score ${issue.priority || 95}. Turnaround deadline is ${issue.sla || "4 hours"}. Immediate containment required.`);
+      if (isSpeakingAnnouncement) {
+        stopAnnouncement();
+        toast("Voice IVR announcement stopped.", "info");
+      } else {
+        const text = `URBAN-EYES Emergency Notification for Executive Engineer. Critical ${issue.category} reported at ${issue.location}. Priority score ${issue.priority || 95}. Turnaround deadline is ${issue.sla || "4 hours"}. Immediate containment required.`;
+        startAnnouncement(text, voiceBtn, "⏹️ Stop Audio");
+      }
     };
   }
 
@@ -571,6 +712,7 @@ window.openDispatchModal = function(id) {
         }
 
         modal.classList.add("hidden");
+        stopAnnouncement();
         bootstrapBackend();
       } catch (err) {
         console.error("Alert dispatch failed:", err);
@@ -756,11 +898,30 @@ function initMiniMap() {
     attribution: "© OpenStreetMap"
   }).addTo(miniMapInstance);
 
+  if (window.ResizeObserver && !container.__ro) {
+    const ro = new ResizeObserver(() => {
+      if (miniMapInstance) miniMapInstance.invalidateSize();
+    });
+    ro.observe(container);
+    container.__ro = ro;
+  }
+
+  setTimeout(() => {
+    if (miniMapInstance) miniMapInstance.invalidateSize();
+  }, 100);
+  setTimeout(() => {
+    if (miniMapInstance) miniMapInstance.invalidateSize();
+  }, 300);
+
   refreshMiniMapMarkers();
 }
 
 function refreshMiniMapMarkers() {
-  if (!miniMapInstance || !window.L) return;
+  if (!window.L) return;
+  if (!miniMapInstance) {
+    initMiniMap();
+    return;
+  }
   miniMapMarkers.forEach(m => miniMapInstance.removeLayer(m));
   miniMapMarkers = [];
 
@@ -799,6 +960,18 @@ function initMainMap() {
     maxZoom: 19,
     attribution: "© OpenStreetMap contributors"
   }).addTo(mainMapInstance);
+
+  if (window.ResizeObserver && !container.__ro) {
+    const ro = new ResizeObserver(() => {
+      if (mainMapInstance) mainMapInstance.invalidateSize();
+    });
+    ro.observe(container);
+    container.__ro = ro;
+  }
+
+  setTimeout(() => {
+    if (mainMapInstance) mainMapInstance.invalidateSize();
+  }, 100);
 
   refreshMainMapMarkers();
   setupMainMapControls();
@@ -972,6 +1145,18 @@ function initReportMap() {
     attribution: "© OpenStreetMap"
   }).addTo(reportMapInstance);
 
+  if (window.ResizeObserver && !container.__ro) {
+    const ro = new ResizeObserver(() => {
+      if (reportMapInstance) reportMapInstance.invalidateSize();
+    });
+    ro.observe(container);
+    container.__ro = ro;
+  }
+
+  setTimeout(() => {
+    if (reportMapInstance) reportMapInstance.invalidateSize();
+  }, 100);
+
   reportMarker = L.marker([defLat, defLng], { draggable: true }).addTo(reportMapInstance);
   reportMarker.on("dragend", async () => {
     const ll = reportMarker.getLatLng();
@@ -1100,9 +1285,24 @@ function captureSnapshot() {
 
 // Sample image quick pickers
 function setupSamplePickers() {
+  const sampleCategoryMap = {
+    pothole: "Pothole",
+    road_crack: "Road crack",
+    garbage: "Garbage",
+    streetlight: "Streetlight",
+    drainage: "Drainage",
+    footpath: "Footpath",
+    traffic_signal: "Traffic signal"
+  };
+
   qsa("[data-sample]").forEach(btn => {
     btn.addEventListener("click", async () => {
       const sampleKey = btn.dataset.sample;
+      const targetCat = sampleCategoryMap[sampleKey];
+      if (targetCat && qs("#reportCategory")) {
+        qs("#reportCategory").value = targetCat;
+      }
+
       const url = `/static/sample_images/${sampleKey}_sample.jpg`;
 
       try {
@@ -1121,7 +1321,7 @@ function setupSamplePickers() {
         qs("#reportPreviewImg").src = url;
         qs("#reportEvidencePreview").style.display = "block";
 
-        toast(`Loaded ${sampleKey} test sample. Running AI Auto-Extraction...`, "info");
+        toast(`Loaded ${targetCat || sampleKey} test sample. Running AI Auto-Extraction...`, "info");
         triggerAiAutoExtract();
       } catch (err) {
         console.error("Failed to load sample:", err);
@@ -1565,11 +1765,11 @@ function renderDashcamEvents(data) {
   if (!list) return;
 
   list.innerHTML = dashcamSimulationEvents.map((ev, idx) => `
-    <div class="dashcam-event-item" id="dashcam-item-${idx}" style="display:flex;gap:10px;padding:8px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;align-items:center;cursor:pointer;transition:.15s" onclick="showDashcamFrame(${idx})">
+    <div class="dashcam-event-item" id="dashcam-item-${idx}" style="display:flex;gap:10px;padding:8px;background:var(--panel-card);border:1px solid var(--line);border-radius:10px;align-items:center;cursor:pointer;transition:.15s;color:var(--ink)" onclick="showDashcamFrame(${idx})">
       <img src="${ev.thumbnail}" style="width:48px;height:40px;object-fit:cover;border-radius:6px" onerror="this.src='/static/sample_images/pothole_sample.jpg'" />
       <div style="flex:1">
         <div style="font-size:10px;font-weight:700">${ev.cat} (${ev.sev})</div>
-        <div style="font-size:9px;color:#64748b">Sec ${ev.sec} • ${ev.speed} km/h • ${ev.lat}, ${ev.lng}</div>
+        <div style="font-size:9px;color:var(--muted)">Sec ${ev.sec} • ${ev.speed} km/h • ${ev.lat}, ${ev.lng}</div>
       </div>
       <div>${badgeSeverity(ev.sev)}</div>
     </div>
@@ -1586,8 +1786,8 @@ window.showDashcamFrame = function(idx) {
   if (qs("#hudGps")) qs("#hudGps").textContent = `${ev.lat}° N, ${ev.lng}° E`;
 
   qsa(".dashcam-event-item").forEach((el, i) => {
-    el.style.borderColor = (i === idx) ? "#2563eb" : "#e2e8f0";
-    el.style.background = (i === idx) ? "#eff6ff" : "#f8fafc";
+    el.style.borderColor = (i === idx) ? "var(--blue)" : "var(--line)";
+    el.style.background = (i === idx) ? "var(--card-hover)" : "var(--panel-card)";
   });
 };
 
@@ -1623,13 +1823,13 @@ async function loadPredictiveAnalytics() {
     const cardList = qs("#predictiveCardsList");
     if (cardList) {
       cardList.innerHTML = (data.predictiveHotspots || []).map(p => `
-        <div style="padding:12px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">
+        <div style="padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--panel-card);color:var(--ink)">
           <div style="display:flex;justify-content:space-between">
             <strong style="font-size:12px">${esc(p.corridor)}</strong>
             <span class="badge high">${p.probability} Risk</span>
           </div>
           <div style="font-size:10px;color:#dc2626;font-weight:bold;margin:4px 0">${esc(p.defectType)} • Due: ${esc(p.predictedFailureDate)}</div>
-          <div style="font-size:10px;color:#475569">${esc(p.recommendedAction)}</div>
+          <div style="font-size:10px;color:var(--muted)">${esc(p.recommendedAction)}</div>
           <div style="font-size:9px;color:#16a34a;margin-top:4px;font-weight:bold">Estimated Cost Savings: ${esc(p.costSaving)}</div>
         </div>
       `).join("");
@@ -1639,12 +1839,12 @@ async function loadPredictiveAnalytics() {
     const zoneList = qs("#zoneHealthList");
     if (zoneList) {
       zoneList.innerHTML = (data.zoneBreakdown || []).map(z => `
-        <div style="padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#fff">
+        <div style="padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-card);color:var(--ink)">
           <div style="display:flex;justify-content:space-between">
             <span style="font-weight:700;font-size:11px">${esc(z.zone)}</span>
             <span style="font-family:'Space Grotesk';font-weight:700">${z.health}/100</span>
           </div>
-          <div style="font-size:9px;color:#64748b;margin-top:4px">Pothole Risk: ${z.potholeRisk} • Monsoon Risk: ${z.monsoonRisk}</div>
+          <div style="font-size:9px;color:var(--muted);margin-top:4px">Pothole Risk: ${z.potholeRisk} • Monsoon Risk: ${z.monsoonRisk}</div>
         </div>
       `).join("");
     }
@@ -1670,14 +1870,14 @@ function renderAdminQueue() {
     <div class="admin-issue-card">
       <div class="admin-card-head">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="position:relative;width:56px;height:46px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#0f172a;cursor:pointer;border:1px solid #cbd5e1" onclick="openIssueModal('${i.id}')" title="Click to view full photo evidence">
+          <div style="position:relative;width:56px;height:46px;flex-shrink:0;border-radius:6px;overflow:hidden;background:#0f172a;cursor:pointer;border:1px solid var(--line)" onclick="openIssueModal('${i.id}')" title="Click to view full photo evidence">
             <img src="${i.evidenceUrl || '/static/sample_images/pothole_sample.jpg'}" style="width:100%;height:100%;object-fit:cover" onerror="this.src='/static/sample_images/pothole_sample.jpg'" alt="${esc(i.category)}" />
             <span style="position:absolute;bottom:1px;right:2px;background:rgba(0,0,0,0.65);color:#fff;font-size:7px;padding:1px 3px;border-radius:3px">📷</span>
           </div>
           <div>
             <span style="font-family:'Space Grotesk';font-size:10px;font-weight:700;color:#2563eb">${esc(i.id)}</span>
             <h4 style="margin:2px 0;font:700 13px 'Space Grotesk'">${esc(i.title)}</h4>
-            <div style="font-size:10px;color:#64748b">${esc(i.location)}</div>
+            <div style="font-size:10px;color:var(--muted)">${esc(i.location)}</div>
           </div>
         </div>
         <div style="display:flex;gap:4px">
@@ -1686,15 +1886,15 @@ function renderAdminQueue() {
         </div>
       </div>
 
-      <div style="font-size:10px;color:#475569;margin:8px 0;display:flex;flex-wrap:wrap;gap:8px">
+      <div style="font-size:10px;color:var(--muted);margin:8px 0;display:flex;flex-wrap:wrap;gap:8px">
         <span><strong>Assigned:</strong> ${esc(i.assignedDepartment || i.owner || "Unassigned")}</span>
         <span><strong>SLA:</strong> ${esc(i.sla || "24h")}</span>
         <span><strong>Dispatch:</strong> ${esc(i.dispatchStatus || "Pending")}</span>
       </div>
 
-      <div style="margin:8px 0;display:flex;align-items:center;gap:8px;background:#fff;padding:6px 10px;border-radius:8px;border:1px solid #e2e8f0;flex-wrap:wrap">
-        <span style="font-size:10px;font-weight:700;color:#475569">Quick Status Update:</span>
-        <select style="font-size:10px;padding:3px 6px;border-radius:6px;border:1px solid #cbd5e1;background:#f8fafc" onchange="quickUpdateStatus('${i.id}', this.value)">
+      <div class="admin-quick-status-row" style="margin:8px 0;display:flex;align-items:center;gap:8px;background:var(--panel);padding:6px 10px;border-radius:8px;border:1px solid var(--line);flex-wrap:wrap">
+        <span style="font-size:10px;font-weight:700;color:var(--ink)">Quick Status Update:</span>
+        <select class="admin-quick-select" style="font-size:10px;padding:4px 8px;border-radius:6px;border:1px solid var(--line);background:var(--input-bg);color:var(--ink);cursor:pointer" onchange="quickUpdateStatus('${i.id}', this.value)">
           <option value="Not assigned" ${i.status === 'Not assigned' ? 'selected' : ''}>Pending / Not assigned</option>
           <option value="Assigned" ${i.status === 'Assigned' ? 'selected' : ''}>Assigned</option>
           <option value="In progress" ${i.status === 'In progress' ? 'selected' : ''}>In progress</option>
@@ -1714,11 +1914,11 @@ function renderAdminQueue() {
   const authContainer = qs("#authoritiesListContainer");
   if (authContainer) {
     authContainer.innerHTML = state.authorities.map(a => `
-      <div style="padding:10px;border:1px solid #e2e8f0;border-radius:10px;background:#f8fafc">
+      <div style="padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--panel-card);color:var(--ink)">
         <strong style="font-size:11px">${esc(a.name)}</strong>
-        <div style="font-size:9px;color:#2563eb;font-weight:700">${esc(a.city)} • ${esc(a.state)}</div>
-        <div style="font-size:9px;color:#475569;margin-top:2px">Officer: ${esc(a.officer)}</div>
-        <div style="font-size:9px;color:#64748b">📞 ${esc(a.phone)} • 💬 ${esc(a.whatsapp)}</div>
+        <div style="font-size:9px;color:var(--blue);font-weight:700">${esc(a.city)} • ${esc(a.state)}</div>
+        <div style="font-size:9px;color:var(--muted);margin-top:2px">Officer: ${esc(a.officer)}</div>
+        <div style="font-size:9px;color:var(--muted)">📞 ${esc(a.phone)} • 💬 ${esc(a.whatsapp)}</div>
       </div>
     `).join("");
   }
@@ -1771,7 +1971,10 @@ function renderAll() {
 // Setup Modals
 function setupModals() {
   qs("#issueModalCloseBtn")?.addEventListener("click", () => qs("#issueModal")?.classList.add("hidden"));
-  qs("#dispatchModalCloseBtn")?.addEventListener("click", () => qs("#dispatchAlertModal")?.classList.add("hidden"));
+  qs("#dispatchModalCloseBtn")?.addEventListener("click", () => {
+    stopAnnouncement();
+    qs("#dispatchAlertModal")?.classList.add("hidden");
+  });
   qs("#resolveModalCloseBtn")?.addEventListener("click", () => qs("#resolveModal")?.classList.add("hidden"));
 
   // Clear test issues button
@@ -1817,8 +2020,97 @@ function setupModals() {
   });
 }
 
+// ==========================================
+// Theme Management (Dark & Light Mode)
+// ==========================================
+function getStoredTheme() {
+  try {
+    const saved = localStorage.getItem("urban_eyes_theme");
+    if (saved === "dark" || saved === "light") return saved;
+  } catch (e) {}
+  if (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) {
+    return "dark";
+  }
+  return "light";
+}
+
+function applyTheme(theme, save = true) {
+  const isDark = theme === "dark";
+  if (isDark) {
+    document.documentElement.classList.add("dark-mode");
+    document.body.classList.add("dark-mode");
+  } else {
+    document.documentElement.classList.remove("dark-mode");
+    document.body.classList.remove("dark-mode");
+  }
+
+  // Update topbar button
+  const topBtn = qs("#themeToggleBtn");
+  if (topBtn) {
+    const icon = topBtn.querySelector(".theme-icon");
+    const text = topBtn.querySelector(".theme-text");
+    if (icon) icon.textContent = isDark ? "☀️" : "🌙";
+    if (text) text.textContent = isDark ? "Light Mode" : "Dark Mode";
+    topBtn.setAttribute("title", isDark ? "Switch to Light Mode" : "Switch to Dark Mode");
+  }
+
+  // Update sidebar button
+  const sideBtn = qs("#sidebarThemeToggleBtn");
+  if (sideBtn) {
+    sideBtn.textContent = isDark ? "☀️" : "🌙";
+    sideBtn.setAttribute("title", isDark ? "Switch to Light Mode" : "Switch to Dark Mode");
+  }
+
+  // Update meta theme-color if present
+  let meta = qs('meta[name="theme-color"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = "theme-color";
+    document.head.appendChild(meta);
+  }
+  meta.content = isDark ? "#090e17" : "#f4f7fa";
+
+  if (save) {
+    try {
+      localStorage.setItem("urban_eyes_theme", isDark ? "dark" : "light");
+    } catch (e) {}
+  }
+}
+
+function toggleTheme() {
+  const isCurrentlyDark = document.body.classList.contains("dark-mode") || document.documentElement.classList.contains("dark-mode");
+  const nextTheme = isCurrentlyDark ? "light" : "dark";
+  applyTheme(nextTheme, true);
+  toast(nextTheme === "dark" ? "Dark Mode activated" : "Light Mode activated", "info");
+}
+
+window.toggleTheme = toggleTheme;
+
+function initTheme() {
+  const initialTheme = getStoredTheme();
+  applyTheme(initialTheme, false);
+
+  // Listen for system preference changes if user hasn't explicitly set a preference
+  if (window.matchMedia) {
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handler = (e) => {
+      try {
+        if (!localStorage.getItem("urban_eyes_theme")) {
+          applyTheme(e.matches ? "dark" : "light", false);
+        }
+      } catch (err) {}
+    };
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener("change", handler);
+    } else if (mediaQuery.addListener) {
+      mediaQuery.addListener(handler);
+    }
+  }
+}
+
 // Initialization on DOM load
 window.addEventListener("DOMContentLoaded", () => {
+  initTheme();
   setupNav();
   setupFilters();
   setupReportForm();
@@ -1827,5 +2119,15 @@ window.addEventListener("DOMContentLoaded", () => {
   setupDashcam();
   setupModals();
 
+  // Initialize overview mini-map on page load
+  initMiniMap();
+
   bootstrapBackend();
 });
+
+window.addEventListener("resize", () => {
+  if (miniMapInstance) miniMapInstance.invalidateSize();
+  if (mainMapInstance) mainMapInstance.invalidateSize();
+  if (reportMapInstance) reportMapInstance.invalidateSize();
+});
+

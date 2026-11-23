@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3b82f6"/>
+      <stop offset="50%" stop-color="#2563eb"/>
+      <stop offset="100%" stop-color="#1d4ed8"/>
+    </linearGradient>
+    <linearGradient id="lensGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Squircle Base -->
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="url(#bgGrad)"/>
+  <rect x="5" y="5" width="118" height="118" rx="27" fill="none" stroke="#60a5fa" stroke-width="2" stroke-opacity="0.45"/>
+
+  <!-- AI Civic Eye Lens Contour -->
+  <path d="M 20 64 C 36 38 92 38 108 64 C 92 90 36 90 20 64 Z" 
+        fill="none" 
+        stroke="#ffffff" 
+        stroke-width="7" 
+        stroke-linecap="round" 
+        stroke-linejoin="round"/>
+
+  <!-- Outer Optic Ring -->
+  <circle cx="64" cy="64" r="22" fill="#0f172a" fill-opacity="0.25" stroke="#93c5fd" stroke-width="3"/>
+
+  <!-- Glowing Cyan AI Iris -->
+  <circle cx="64" cy="64" r="14" fill="url(#lensGrad)" filter="url(#glow)"/>
+
+  <!-- Core Pupil / White Specular Glint -->
+  <circle cx="64" cy="64" r="7" fill="#ffffff"/>
+  <circle cx="67" cy="61" r="2.5" fill="#ffffff"/>
+
+  <!-- Target Aim / AI Detection Brackets -->
+  <path d="M 16 32 L 16 18 L 30 18" stroke="#93c5fd" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M 112 32 L 112 18 L 98 18" stroke="#93c5fd" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M 16 96 L 16 110 L 30 110" stroke="#93c5fd" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+  <path d="M 112 96 L 112 110 L 98 110" stroke="#93c5fd" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+</svg>

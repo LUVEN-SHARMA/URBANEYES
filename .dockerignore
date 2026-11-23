@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+.git/
+.vscode/
+.DS_Store
+data_downloads/
+runs/
+datasets/rdd2022_yolo/images/
+datasets/rdd2022_yolo/labels/
+data/*.db-shm
+data/*.db-wal
