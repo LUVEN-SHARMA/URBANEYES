@@ -7,7 +7,6 @@ data/*.db-shm
 data/*.db-wal
 uploads/*
 !uploads/.gitkeep
-models/*.pt
 runs/
 datasets/rdd2022_yolo/images/
 datasets/rdd2022_yolo/labels/
